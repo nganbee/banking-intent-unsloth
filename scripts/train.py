@@ -8,8 +8,7 @@ from datasets import load_dataset, Dataset
 import torch
 import pandas as pd
 
-CONFIG_PATH = '/kaggle/input/datasets/kimngntrn510/bank-intent-data/sample_data/configs/train.yml'
-TRAIN_PATH = '/kaggle/input/datasets/kimngntrn510/bank-intent-data/sample_data/sample_data/train.csv'
+CONFIG_PATH = 'configs/train.ym;'
 
 PROMPT_TEMPLATE = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 
@@ -112,8 +111,8 @@ def main():
     trainer.train()
 
     print("Saving Model")
-    model.save_pretrained('/kaggle/working/banking_model/') # config path
-    tokenizer.save_pretrained('/kaggle/working/banking_model/')
+    model.save_pretrained(os.path.join(config['training']['output_dir'], 'bank-intent-model'))
+    tokenizer.save_pretrained(os.path.join(config['training']['output_dir'], 'bank-intent-model'))
     
 if __name__ == "__main__":
     main()
