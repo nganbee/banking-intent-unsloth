@@ -6,7 +6,7 @@ model:
 
 data:
   train_path: "sample_data/train.csv"
-  test_path: ".sample_data/test.csv"
+  test_path: "sample_data/test.csv"
   num_classes: 77
 
 # Hyperparameter Config
