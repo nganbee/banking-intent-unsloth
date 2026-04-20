@@ -26,7 +26,11 @@ def main():
     # Label Mapping
     label_names = sorted(train_df['name_intent'].unique().tolist())
     label_to_id = {name: idx for idx, name in enumerate(label_names)}
-
+    
+    # Save Data mapping
+    df_label = pd.DataFrame(list(label_to_id.items()), columns=['name_intent', 'label'])
+    df_label.to_csv(DATA_PATH + '/intent_mapping.csv', index=False)
+    
     train_df['label'] = train_df['name_intent'].map(label_to_id)
     test_df['label'] = test_df['name_intent'].map(label_to_id)
     
