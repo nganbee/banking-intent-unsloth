@@ -155,7 +155,7 @@ def main():
             
             print(f"Model ouptut: {result}")
     else:
-        test_text = "I want to report a stolen card and freeze my account"
+        test_text = "How do I reset my secret code? I think I forgot it."
         result = classifier(test_text)
         
         print(f"\nTest Input: {test_text}")

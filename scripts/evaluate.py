@@ -21,25 +21,40 @@ def map_to_known_label(prediction, known_labels):
 
     if normalized_prediction in normalized_labels:
         return normalized_labels[normalized_prediction]
+    
+    if len(prediction.split()) > 5:
+        for norm_label, original_label in normalized_labels.items():
+            if f"_{norm_label}_" in f"_{normalized_prediction}_" and len(norm_label) > 12:
+                return original_label
+        return "unknown"
 
     for normalized_label, original_label in normalized_labels.items():
         if normalized_label in normalized_prediction or normalized_prediction in normalized_label:
             return original_label
 
-    close_matches = get_close_matches(normalized_prediction, list(normalized_labels.keys()), n=1, cutoff=0.6)
+    close_matches = get_close_matches(normalized_prediction, list(normalized_labels.keys()), n=1, cutoff=0.8)
     if close_matches:
         return normalized_labels[close_matches[0]]
 
     return "unknown"
 
-def evaluate_model(mode, config_path, batch_size=4):
+def evaluate_model(mode, config_path, num_samples, batch_size=4):
     classifier = IntentClassification(config_path, mode)
     
     df_test = pd.read_csv(classifier.config['data']['test_path'])
+    
+    if num_samples is not None and num_samples > 0:
+        n = min(num_samples, len(df_test))
+        df_test = df_test.sample(n=n, random_state=42).reset_index(drop=True)
+        print(f"Evaluating {n} random samples from test set.")
+    else:
+        print(f"Evaluating full test set ({len(df_test)} samples).")
+        
     known_labels_list = classifier.class_list_str.split("\n")
     
     y_true = df_test['name_intent'].tolist()
     y_pred = []
+    y_pred_raw = []
     
     print(f"Batch Evaluating Model {mode.upper()}")
     
@@ -49,14 +64,21 @@ def evaluate_model(mode, config_path, batch_size=4):
         
         for p in raw_preds:
             y_pred.append(map_to_known_label(p, known_labels_list))
+            y_pred_raw.append(p)
+            
+    indices = [i for i, label in enumerate(y_pred) if label != "unknown"]
+    y_true_filtered = [y_true[i] for i in indices]
+    y_pred_filtered = [y_pred[i] for i in indices]
         
     print(f"EVALUATION RESULT")
     print("-" * 50)
-    print(f"Accuracy: {accuracy_score(y_true, y_pred):.4f}")
+    print(f"Number of `unknown` prediction: {y_pred.count('unknown')}")
+    print(f"Accuracy: {accuracy_score(y_true_filtered, y_pred_filtered):.4f}")
     print("-" * 50)
-    print(classification_report(y_true, y_pred, digits=4))
+    print(classification_report(y_true_filtered, y_pred_filtered, digits=4))
     
     df_test['predicted_intent'] = y_pred
+    df_test['raw_predicted_intent'] = y_pred_raw
     df_test.to_csv(f"evaluation_results_{mode}.csv", index=False)
     
     # Clean VRAM
@@ -75,6 +97,9 @@ def main():
                         help="Select mode of model for evalutation")
     
     parser.add_argument("--config", type=str, default="configs/inference.yml", help="Config path")
+    
+    parser.add_argument("--num_samples", type=int, default=None, 
+                        help="Number of samples to evaluate. Leave empty to test all.")
 
     args = parser.parse_args()
     if args.mode == "all":
@@ -85,7 +110,7 @@ def main():
 
     for current_mode in modes_to_run:
         try:
-            evaluate_model(mode=current_mode, config_path=args.config)
+            evaluate_model(mode=current_mode, config_path=args.config, num_samples=args.num_samples)
         except Exception as e:
             print(f"Error while running {current_mode}: {e}")
             sys.exit(1)
