@@ -13,6 +13,10 @@ class IntentClassification:
         self.config = self._load_config(config_path)
         self.mode = mode
         
+        # For predict_batch
+        self.tokenizer.padding_side = "left"
+        self.tokenizer.pad_token = self.tokenizer.eos_token
+        
         # Check to use base or fine-tune model
         if 'base' in self.mode:
             model_path = self.config['model']['base_model']
@@ -72,6 +76,31 @@ Rule: Output ONLY the exact intent name.
 
 ### Response:
 """
+
+    def _predict_batch(self, texts):
+        prompts = [self._get_prompt(text) for text in texts]
+        
+        inputs = self.tokenizer(
+            prompts, 
+            return_tensors="pt", 
+            padding=True, # Tự động thêm padding cho các câu ngắn hơn
+            truncation=True,
+            max_length=self.config['model']['max_seq_length']
+        ).to("cuda")
+        
+        # 3. Generate hàng loạt
+        outputs = self.model.generate(
+            **inputs, 
+            max_new_tokens=self.config['model']['max_new_tokens'],
+            temperature=0,
+            use_cache=True
+        )
+        
+        # 4. Decode và tách kết quả
+        full_texts = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
+        predictions = [text.split("### Response:")[-1].strip() for text in full_texts]
+        
+        return predictions
         
     def __call__(self, text):
         
@@ -101,16 +130,36 @@ def main():
                         help="Select mode of model for evalutation")
     
     parser.add_argument("--config", type=str, default="configs/inference.yml", help="Config path")
+    parser.add_argument("--interactive", action="store_true", help="Input text to model directly")
 
     args = parser.parse_args()
-       
     classifier = IntentClassification(args.config, mode=args.mode)
     
-    test_text = "I want to report a stolen card and freeze my account"
-    result = classifier(test_text)
-    
-    print(f"\nTest Input: {test_text}")
-    print(f"Model Output: {result}")
+    if args.interactive:
+        print("\n" + "="*50)
+        print(f"START TYPING ({args.mode.upper()})")
+        print("Type 'exit' or 'q' to stop")
+        print("="*50)
+        
+        while True:
+            user_input = input("\nInput text: ").strip()
+            
+            if user_input.lower() in ['exit', 'q', 'quit']:
+                print("Quiting...")
+                break
+                
+            if not user_input:
+                continue
+                
+            result = classifier(user_input)
+            
+            print(f"Model ouptut: {result}")
+    else:
+        test_text = "I want to report a stolen card and freeze my account"
+        result = classifier(test_text)
+        
+        print(f"\nTest Input: {test_text}")
+        print(f"Model Output: {result}")
     
 if __name__ == "__main__":
     main()

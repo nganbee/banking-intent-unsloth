@@ -32,7 +32,7 @@ def map_to_known_label(prediction, known_labels):
 
     return "unknown"
 
-def evaluate_model(mode, config_path):
+def evaluate_model(mode, config_path, batch_size=4):
     classifier = IntentClassification(config_path, mode)
     
     df_test = pd.read_csv(classifier.config['data']['test_path'])
@@ -41,12 +41,14 @@ def evaluate_model(mode, config_path):
     y_true = df_test['name_intent'].tolist()
     y_pred = []
     
-    print(f"Evaluating model {mode.upper()}")
+    print(f"Batch Evaluating Model {mode.upper()}")
     
-    for _, message in enumerate(tqdm(df_test['text'])):
-        raw_pred = classifier(message)
-        mapped_pred = map_to_known_label(raw_pred, known_labels_list)
-        y_pred.append(mapped_pred)
+    for i in tqdm(range(0, len(df_test), batch_size)):
+        batch_texts = df_test['text'].iloc[i : i + batch_size].tolist()
+        raw_preds = classifier._predict_batch(batch_texts)
+        
+        for p in raw_preds:
+            y_pred.append(map_to_known_label(p, known_labels_list))
         
     print(f"EVALUATION RESULT")
     print("-" * 50)
@@ -66,8 +68,6 @@ def evaluate_model(mode, config_path):
     return y_pred
     
 def main():
-    CONFIG_PATH = "configs/inference.yml"
-    
     parser = argparse.ArgumentParser(description="Banking Intent Evaluation Script")
     
     parser.add_argument("--mode", type=str, default="finetuned", 
