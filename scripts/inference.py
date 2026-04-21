@@ -1,4 +1,5 @@
 import os
+import argparse
 import yaml
 import pandas as pd
 from unsloth import FastLanguageModel
@@ -93,12 +94,25 @@ Output ONLY the specific intent name for this banking query. Do not explain.
         prediction = full_text.split("### Response:")[-1].strip()
         return prediction
     
-if __name__ == "__main__":
-    classifier = IntentClassification("configs/inference.yml")
+def main():
+    parser = argparse.ArgumentParser(description="Banking Intent Evaluation Script")
+    
+    parser.add_argument("--mode", type=str, default="finetuned", 
+                        choices=["base_zero_shot", "base_few_shot", "finetuned"],
+                        help="Select mode of model for evalutation")
+    
+    parser.add_argument("--config", type=str, default="configs/inference.yml", help="Config path")
+
+    args = parser.parse_args()
+       
+    classifier = IntentClassification(args.config, mode=args.mode)
     
     test_text = "I want to report a stolen card and freeze my account"
     result = classifier(test_text)
     
     print(f"\nTest Input: {test_text}")
     print(f"Model Output: {result}")
+    
+if __name__ == "__main__":
+    main()
     
