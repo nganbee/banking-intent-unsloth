@@ -33,7 +33,7 @@ def map_to_known_label(prediction, known_labels):
     return "unknown"
 
 def evaluate_model(mode, config_path):
-    classifier = IntentClassification(mode, config_path)
+    classifier = IntentClassification(config_path, mode)
     
     df_test = pd.read_csv(classifier.config['data']['test_path'])
     known_labels_list = classifier.class_list_str.split("\n")
