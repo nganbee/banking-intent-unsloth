@@ -1,8 +1,9 @@
-# Cấu hình mô hình nền tảng
+# Model config
 model:
   model_name: "unsloth/Qwen2.5-3B-bnb-4bit"
   max_seq_length: 1024
   load_in_4bit: true
+  hf_name: "imbee510/bank-intent-qwen-unsloth"
 
 data:
   train_path: "sample_data/train.csv"

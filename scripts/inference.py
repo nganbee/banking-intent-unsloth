@@ -7,7 +7,7 @@ class IntentClassification:
     def __init__(self, config_path):
         
         self.config = self._load_config(config_path)
-        model_path = self.config['model']['checkpoint']
+        model_path = self.config['model']['hf_name']
         mapping_path = self.config['data']['map_path']
         
         self.model, self.tokenizer = FastLanguageModel.from_pretrained(

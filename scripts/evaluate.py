@@ -29,13 +29,13 @@ def map_to_known_label(prediction, known_labels):
     return normalized_prediction
 
 def main():
-    CONFIG_PATH = "../configs/inference.yml"
+    CONFIG_PATH = "configs/inference.yml"
     classifier = IntentClassification(CONFIG_PATH)
 
-    df_test = pd.read_csv("../sample_data/test.csv")
+    df_test = pd.read_csv(classifier.config['data']['test_path'])
     known_labels_list = classifier.class_list_str.split("\n") 
 
-    # 4. Chạy dự đoán
+    # Run prediction
     y_true = df_test['name_intent'].tolist()
     y_pred = []
 

@@ -1,5 +1,7 @@
+# Model config
 model:
   checkpoint: "checkpoints/bank-intent-model"
+  hf_name: "imbee510/bank-intent-qwen-unsloth"
   base_model: "unsloth/Qwen2.5-3B-bnb-4bit"
   max_seq_length: 1024
   load_in_4bit: True
@@ -7,3 +9,4 @@ model:
 
 data:
   map_path: "sample_data/intent_mapping.csv"
+  test_path: "sample_data/test.csv"
