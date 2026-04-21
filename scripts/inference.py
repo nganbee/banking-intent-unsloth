@@ -4,10 +4,22 @@ import pandas as pd
 from unsloth import FastLanguageModel
 
 class IntentClassification:
-    def __init__(self, config_path):
+    def __init__(self, config_path, mode='finetuned'):
+        """
+        mode: "base_zero_shot, base_few_shot, finetuned
+        """
         
         self.config = self._load_config(config_path)
-        model_path = self.config['model']['hf_name']
+        self.mode = mode
+        
+        # Check to use base or fine-tune model
+        if 'base' in self.mode:
+            model_path = self.config['model']['base_model']
+        else:
+            model_path = self.config['model']['ft_model']
+        
+        print(f"CREATING {mode.upper()} MODEL")    
+        
         mapping_path = self.config['data']['map_path']
         
         self.model, self.tokenizer = FastLanguageModel.from_pretrained(
@@ -32,23 +44,41 @@ class IntentClassification:
         except Exception as e:
             print(f"Error: {e}")
             return ""
+        
+    def _get_prompt(self, text):
+        few_shot_ex = ""
+        if self.mode == "base_few_shot":
+             few_shot_ex = """
+             ### Examples:
+Input: "I can't find my credit card anywhere and I'm worried it's been stolen."
+Response: lost_card
 
-    def __call__(self, text):
-        prompt = f"""Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+Input: "What is the current interest rate for a savings account?"
+Response: interest_rate
+
+Input: "I want to transfer 500 dollars to my friend's account."
+Response: transfer_funds             
+"""
+        return f"""Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 
 ### Instruction:
 Classify the intent of the following banking customer query
 Output ONLY the specific intent name for this banking query. Do not explain.
 {self.class_list_str}
+{few_shot_ex}
 
 ### Input:
 {text}
 
 ### Response:
 """
+        
+    def __call__(self, text):
+        
+        prompt = self._get_prompt(text)
         inputs = self.tokenizer([prompt], return_tensors="pt").to("cuda")
         
-        # Sinh văn bản (chỉ lấy tối đa 20 tokens cho nhãn)
+        # Generate output
         outputs = self.model.generate(
             **inputs, 
             max_new_tokens=self.config['model']['max_new_tokens'], 
@@ -58,7 +88,7 @@ Output ONLY the specific intent name for this banking query. Do not explain.
             temperature=0.1
         )
         
-        # Giải mã và cắt lấy phần sau Response:
+        # Get the respone
         full_text = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
         prediction = full_text.split("### Response:")[-1].strip()
         return prediction
