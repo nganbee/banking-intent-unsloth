@@ -13,10 +13,6 @@ class IntentClassification:
         self.config = self._load_config(config_path)
         self.mode = mode
         
-        # For predict_batch
-        self.tokenizer.padding_side = "left"
-        self.tokenizer.pad_token = self.tokenizer.eos_token
-        
         # Check to use base or fine-tune model
         if 'base' in self.mode:
             model_path = self.config['model']['base_model']
@@ -32,6 +28,10 @@ class IntentClassification:
             max_seq_length = self.config['model']['max_seq_length'],
             load_in_4bit = self.config['model']['load_in_4bit'],
         )
+        
+        # For predict_batch
+        self.tokenizer.padding_side = "left"
+        self.tokenizer.pad_token = self.tokenizer.eos_token
         
         self.class_list_str = self._get_class_intent(mapping_path)
         
