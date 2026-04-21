@@ -49,8 +49,7 @@ class IntentClassification:
     def _get_prompt(self, text):
         few_shot_ex = ""
         if self.mode == "base_few_shot":
-             few_shot_ex = """
-             ### Examples:
+             few_shot_ex = """### Examples:
 Input: "I can't find my credit card anywhere and I'm worried it's been stolen."
 Response: lost_card
 
@@ -63,8 +62,8 @@ Response: transfer_funds
         return f"""Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 
 ### Instruction:
-Classify the intent of the following banking customer query
-Output ONLY the specific intent name for this banking query. Do not explain.
+Classify the intent of the following banking customer query.
+Rule: Output ONLY the exact intent name.
 {self.class_list_str}
 {few_shot_ex}
 
@@ -86,7 +85,7 @@ Output ONLY the specific intent name for this banking query. Do not explain.
             use_cache=True,
             pad_token_id=self.tokenizer.pad_token_id,
             eos_token_id=self.tokenizer.eos_token_id,
-            temperature=0.1
+            temperature=0
         )
         
         # Get the respone
