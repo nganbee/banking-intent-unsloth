@@ -75,7 +75,7 @@ def evaluate_model(mode, config_path, num_samples, batch_size=4):
     print(f"Number of `unknown` prediction: {y_pred.count('unknown')}")
     print(f"Accuracy: {accuracy_score(y_true_filtered, y_pred_filtered):.4f}")
     print("-" * 50)
-    print(classification_report(y_true_filtered, y_pred_filtered, digits=4))
+    print(classification_report(y_true_filtered, y_pred_filtered, digits=4, zero_division=0))
     
     df_test['predicted_intent'] = y_pred
     df_test['raw_predicted_intent'] = y_pred_raw

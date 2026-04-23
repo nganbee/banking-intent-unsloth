@@ -67,7 +67,7 @@ Response: transfer_funds
 
 ### Instruction:
 Classify the intent of the following banking customer query.
-Rule: Output ONLY the exact intent name.
+Rule: Output ONLY the exact intent name in these label.
 {self.class_list_str}
 {few_shot_ex}
 
