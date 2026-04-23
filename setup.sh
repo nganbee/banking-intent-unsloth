@@ -1,4 +1,5 @@
 #!/bin/bash
+# Install package for the Kaggle
 
 echo "--- Start install package ---"
 

@@ -1,0 +1,14 @@
+# CUDA 12.8
+--index-url https://download.pytorch.org/whl/cu128
+
+pip3-autoremove
+torch
+torchvision
+torchaudio
+xformers
+transformers==4.56.2
+trl==0.22.2
+gradio
+
+# Unsloth
+unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git
