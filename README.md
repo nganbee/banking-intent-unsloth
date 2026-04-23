@@ -53,6 +53,8 @@ The model is fine-tuned to classify banking queries accurately into predefined i
     bash train.sh
     ```
 
+- Model Checkpoint: Have been saved into Hugging Face (`imbee510/bank-intent-qwen-unsloth`)
+
 ## Inference Implementation
 The inference script supports multiple execution modes. You can specify the model type using the `--mode` flag and use the `--interactive` flag for real-time testing.
 - Available Modes: `base_zero_shot`, `base_few_shot`, `finetuned`
