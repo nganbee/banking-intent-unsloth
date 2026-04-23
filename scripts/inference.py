@@ -138,9 +138,9 @@ Rule: Output ONLY the exact intent name in these label.
         
         return predictions
         
-    def __call__(self, text):
+    def __call__(self, message):
         
-        prompt = self._get_prompt(text)
+        prompt = self._get_prompt(message)
         inputs = self.tokenizer([prompt], return_tensors="pt").to("cuda")
         
         # Generate output
@@ -157,8 +157,8 @@ Rule: Output ONLY the exact intent name in these label.
         full_text = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
         raw_prediction = full_text.split("### Response:")[-1].strip()
         
-        prediction = self._map_to_known_label(raw_prediction)
-        return prediction
+        predicted_label = self._map_to_known_label(raw_prediction)
+        return predicted_label
     
 def main():
     parser = argparse.ArgumentParser(description="Banking Intent Evaluation Script")
