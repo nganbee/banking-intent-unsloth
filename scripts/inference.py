@@ -3,6 +3,7 @@ import argparse
 import yaml
 import pandas as pd
 from unsloth import FastLanguageModel
+import gradio as gr
 
 class IntentClassification:
     def __init__(self, config_path, mode='finetuned'):
@@ -135,25 +136,32 @@ def main():
     args = parser.parse_args()
     classifier = IntentClassification(args.config, mode=args.mode)
     
+    def run_gradio(classifier):
+        def predict(text):
+            if not text.strip():
+                return "Please enter some text."
+            
+            result = classifier(text)
+            
+            return result
+
+        demo = gr.Interface(
+            fn=predict, 
+            inputs=gr.Textbox(
+                lines=3, 
+                placeholder="Enter text to classify...", 
+                label="User Input"
+            ),
+            outputs=gr.Textbox(label="Model Prediction"),
+            title="Text Classifier Interface",
+            description=f"Mode: {args.mode.upper() if 'args' in locals() else 'Finetuned'}",
+            allow_flagging="never"
+        )
+
+        demo.launch(share=True)
+    
     if args.interactive:
-        print("\n" + "="*50)
-        print(f"START TYPING ({args.mode.upper()})")
-        print("Type 'exit' or 'q' to stop")
-        print("="*50)
-        
-        while True:
-            user_input = input("\nInput text: ").strip()
-            
-            if user_input.lower() in ['exit', 'q', 'quit']:
-                print("Quiting...")
-                break
-                
-            if not user_input:
-                continue
-                
-            result = classifier(user_input)
-            
-            print(f"Model ouptut: {result}")
+        run_gradio(classifier=classifier)
     else:
         test_text = "How do I reset my secret code? I think I forgot it."
         result = classifier(test_text)
@@ -163,4 +171,3 @@ def main():
     
 if __name__ == "__main__":
     main()
-    
