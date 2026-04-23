@@ -4,6 +4,8 @@ import yaml
 import pandas as pd
 from unsloth import FastLanguageModel
 import gradio as gr
+from difflib import get_close_matches
+import re
 
 class IntentClassification:
     def __init__(self, config_path, mode='finetuned'):
@@ -35,6 +37,8 @@ class IntentClassification:
         self.tokenizer.pad_token = self.tokenizer.eos_token
         
         self.class_list_str = self._get_class_intent(mapping_path)
+        self.known_labels = self.class_list_str.split("\n")
+        self.norm_map = {self._normalize_intent_label(l): l for l in self.known_labels}
         
         FastLanguageModel.for_inference(self.model)
 
@@ -50,6 +54,35 @@ class IntentClassification:
         except Exception as e:
             print(f"Error: {e}")
             return ""
+        
+    def _normalize_intent_label(self, text):
+        cleaned_text = str(text).strip().lower()
+        cleaned_text = re.sub(r"[^a-z0-9]+", "_", cleaned_text)
+        cleaned_text = re.sub(r"_+", "_", cleaned_text).strip("_")
+        return cleaned_text
+
+    def _map_to_known_label(self, prediction):
+        normalized_prediction = self._normalize_intent_label(prediction)
+        # normalized_labels = {self._normalize_intent_label(label): label for label in self.known_labels}
+
+        if normalized_prediction in self.norm_map:
+            return self.norm_map[normalized_prediction]
+        
+        if len(prediction.split()) > 5:
+            for norm_label, original_label in self.norm_map.items():
+                if f"_{norm_label}_" in f"_{normalized_prediction}_" and len(norm_label) > 12:
+                    return original_label
+            return "unknown"
+
+        for normalized_label, original_label in self.norm_map.items():
+            if normalized_label in normalized_prediction or normalized_prediction in normalized_label:
+                return original_label
+
+        close_matches = get_close_matches(normalized_prediction, list(self.norm_map.keys()), n=1, cutoff=0.8)
+        if close_matches:
+            return self.norm_map[close_matches[0]]
+
+        return "unknown"
         
     def _get_prompt(self, text):
         few_shot_ex = ""
@@ -99,7 +132,9 @@ Rule: Output ONLY the exact intent name in these label.
         
         # 4. Decode và tách kết quả
         full_texts = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-        predictions = [text.split("### Response:")[-1].strip() for text in full_texts]
+        raw_predictions = [text.split("### Response:")[-1].strip() for text in full_texts]
+        
+        predictions = [self._map_to_known_label(pred) for pred in raw_predictions]
         
         return predictions
         
@@ -120,7 +155,9 @@ Rule: Output ONLY the exact intent name in these label.
         
         # Get the respone
         full_text = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
-        prediction = full_text.split("### Response:")[-1].strip()
+        raw_prediction = full_text.split("### Response:")[-1].strip()
+        
+        prediction = self._map_to_known_label(raw_prediction)
         return prediction
     
 def main():
